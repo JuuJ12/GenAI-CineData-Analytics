@@ -3,5 +3,6 @@ langgraph
 pydantic
 pydantic-settings
 python-dotenv
+pandas
 streamlit
 pytest

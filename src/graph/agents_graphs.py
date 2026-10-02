@@ -1,4 +1,5 @@
 import os
+import operator
 import sys
 import sys
 from pathlib import Path
@@ -35,6 +36,7 @@ class PipelineState(TypedDict, total = False):
 
     last_error: Optional[str]
     success: bool
+    decision_order: Annotated[list[str], operator.add]
 
 
 
@@ -44,13 +46,17 @@ def node_verify(state: PipelineState) -> PipelineState: #node condicional
     return {'is_on_topic': result.is_answer,
             'off_topic_reason': result.reason,
             'attempt':0,
-            'max_attempts': state.get('max_attempts', 3)}
+            'max_attempts': state.get('max_attempts', 3),
+            'decision_order': [
+                f"Verificador: {'aceitou' if result.is_answer else 'rejeitou'} a pergunta"
+            ]}
 
 def node_reject(state: PipelineState) -> dict:
     reason = state.get('off_topic_reason', 'Pergunta não é sobre SQL ou sobre o banco de dados CineData')
     return{
         'answer': AnswerSumary(answer=f"Não consigo responder isso com os dados do CineData:{reason}"),
-        'success': False
+        'success': False,
+        'decision_order': ["Roteador: enviou a pergunta para rejeição"],
     }
 
 
@@ -59,30 +65,60 @@ def node_generate_sql(state: PipelineState) -> PipelineState:
     generated_sql = agent_generator_sql(state["question"], feedback=state.get('last_error'))
 
     return {'generated_sql': generated_sql,
-            'attempt': attempt}
+            'attempt': attempt,
+            'decision_order': [
+                f"Gerador SQL: criou a consulta (tentativa {attempt})"
+            ]}
 
 def node_validate_sql(state: PipelineState) -> PipelineState: #node condicional
     validation = agent_validator_sql(state["generated_sql"])
     if not validation.approved:
         return {'validation': validation,
-                'last_error': validation.reason}
+                'last_error': validation.reason,
+                'decision_order': [
+                    "Validador: reprovou a consulta e solicitou nova tentativa"
+                ]}
     return {'validation': validation,
-            'last_error': None}
+            'last_error': None,
+            'decision_order': ["Validador: aprovou a consulta"]}
 
 def node_execute_sql(state: PipelineState) -> dict:
     try:
         result = execute_read_only_query(state["generated_sql"].sql, db_path =DB_PATH)
-        return {'execution': result, 'last_error': None}
+        return {
+            'execution': result,
+            'last_error': None,
+            'decision_order': [
+                "Executor: executou a consulta em modo somente leitura"
+            ],
+        }
     except SQLSecurityError as exc:
-        return {'last_error': f'Erro na execução da query: {exc}'}
+        return {
+            'last_error': f'Erro na execução da query: {exc}',
+            'decision_order': [
+                "Executor: bloqueou a consulta e solicitou nova tentativa"
+            ],
+        }
 
 def node_synthesize_answer(state: PipelineState) -> PipelineState:
-    answer = agent_synthesizer_answer(state["generated_sql"], state["execution"])
-    return {'answer': answer, 'success': True}
+    answer = agent_synthesizer_answer(state["generated_sql"], state["execution"], state["decision_order"]   )
+    return {
+        'answer': answer,
+        'success': True,
+        'decision_order': ["Sintetizador: formulou a resposta final"],
+    }
 
 def node_fail(state: PipelineState) -> dict:
-    return{'answer': AnswerSumary(answer= f"Não consegui gerar uma consulta válida após {state.get('max_attempts')} "
-                f"tentativas. Último problema: {state.get('last_error')}")},
+    return {'answer': AnswerSumary(
+        answer=(
+            f"Não consegui gerar uma consulta válida após {state.get('max_attempts')} "
+            f"tentativas. Último problema: {state.get('last_error')}"
+        )
+    ), 'success': False,
+        'decision_order': [
+            "Pipeline: encerrou após atingir o limite de tentativas"
+        ],
+    }
 
 
 
@@ -131,13 +167,7 @@ cinedata_graph = builder.compile()
 def run_cinedata_pipeline(question: str, max_attempts: int = 3) -> PipelineState:
     return cinedata_graph.invoke({'question': question, 'max_attempts': max_attempts})
 
-resultado = run_cinedata_pipeline("Me diga qual é o Top 10 filmes com maior receita em R$")
-resultado_dump =resultado['answer'].model_dump()
+# print(run_cinedata_pipeline("Qual é o ator com mais participações em filmes lançados nos últimos 5 anos?").get('generated_sql').sql)
+# print(run_cinedata_pipeline(" Ator com mais participações em filmes lançados nos últimos 5 anos"))
 
-print(resultado['answer'].answer)
-
-
-
-
-
-
+print(agent_generator_sql("Ator com mais participações em filmes lançados nos últimos 5 anos").sql)

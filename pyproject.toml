@@ -9,6 +9,7 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "python-dotenv",
+    "pandas",
     "streamlit",
 ]
 

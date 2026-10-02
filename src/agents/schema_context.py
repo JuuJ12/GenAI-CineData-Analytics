@@ -51,4 +51,5 @@ REGRAS DE NEGÓCIO IMPORTANTES:
 - sk_*_id são chaves hash (VARCHAR64), só servem pra JOIN — nunca filtre
   WHERE sk_movie_id = '<algo que o usuário mencionou>'.
 - A query final deve ser sempre e somente SELECT (leitura).
+- data_lancamento está no formato YYYY-MM-DD e contém datas futuras (até 2029). Para "últimos N anos", use BETWEEN date('now', '-N years') AND date('now')
 """

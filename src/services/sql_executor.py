@@ -19,8 +19,9 @@ from schemas.structureds_outputs import QueryExecutionResult
 
 logger = logging.getLogger("cinedata.sql_executor") #o parÂmetro que passamos para o getLogger é o nome do logger, que vai aparecer no log, e que podemos usar para filtrar logs de diferentes partes do sistema
 
-DEAULT_ROW_LIMIT = 200
-QUERY_TIMEOUT_SECONDS = 5.0
+# Limite padrão para evitar resultados excessivamente grandes na interface e no LLM.
+DEAULT_ROW_LIMIT = 20
+QUERY_TIMEOUT_SECONDS = 15.0
 
 _FORBIDDEN_KEYWORDS = re.compile(
     r"\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|ATTACH|DETACH|" #SERVE PARA BLOQUEAR PALAVRAS CHAVE QUE PODEM ALTERAR O BANCO DE DADOS, COMO INSERT, UPDATE, DELETE, DROP, ALTER, CREATE, TRUNCATE, ATTACH, DETACH, PRAGMA, REPLACE, VACUUM E REINDEX
@@ -59,7 +60,14 @@ def validate_readonly_sql(sql: str) -> exp.Expression:
         )
     return tree
 
-def _with_row_limit(tree: exp.Expression, max_rows: int) -> str:
+def _with_row_limit(tree, max_rows):
+    existing = tree.args.get("limit")
+    if existing is not None:
+        try:
+            current = int(existing.expression.name)
+            max_rows = min(current, max_rows)
+        except (ValueError, AttributeError):
+            pass
     return tree.limit(max_rows).sql(dialect="sqlite")
 
 
@@ -94,13 +102,14 @@ def execute_read_only_query(sql: str, db_path: str, max_rows: int = DEAULT_ROW_L
 
     with _readonly_connection(db_path, time_seconds) as connection:
         cursor = connection.cursor()
-        cursor.execute(final_sql)
-        columns = [desc[0] for desc in cursor.description]
-        rows = [list (row) for row in cursor.fetchall()]
+        try:
+            cursor.execute(final_sql)
+            columns = [desc[0] for desc in cursor.description]
+            rows = [list(row) for row in cursor.fetchall()]
+        except sqlite3.OperationalError as exc:
+            raise RuntimeError(f"{exc} | SQL: {final_sql}") from exc
 
     return QueryExecutionResult(columns=columns, rows=rows, row_count=len(rows))
-
-
 
 
 
