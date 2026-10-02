@@ -1,0 +1,19 @@
+[project]
+name = "atividade-genai"
+version = "0.1.0"
+description = "Aplicacao de IA generativa com LangGraph, LangChain e Streamlit"
+requires-python = ">=3.11"
+dependencies = [
+    "langchain",
+    "langgraph",
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv",
+    "streamlit",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]

@@ -1,0 +1,7 @@
+langchain
+langgraph
+pydantic
+pydantic-settings
+python-dotenv
+streamlit
+pytest
