@@ -12,7 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from schemas.structureds_outputs import IsQueryQuestion, SQLquery, SQLvalidationResult, QueryExecutionResult, AnswerSumary
+from schemas.structureds_outputs import IsQueryQuestion, SQLquery, SQLvalidationResult, QueryExecutionResult, AnswerSumary, RewrittenQuestion
 from agents.schema_context import DB_SCHEMA_DESCRIPTION 
 
 
@@ -28,7 +28,7 @@ gemini = ChatGoogleGenerativeAI(
 )
 
 gpt_os = ChatGroq(
-    model="openai/gpt-oss-20b",
+    model="openai/gpt-oss-120b",
     api_key=(os.getenv("GROQ_API_KEY")),
     temperature= 0.0,
     max_tokens=4096,
@@ -57,7 +57,6 @@ def agent_verify_if_is_a_query_Question(input: str) -> IsQueryQuestion:
             ("human", "{question}"),
         ]
     )
-    # Veja: gpt_os puro, sem with_structured_output!
     chain_agent_verifier = prompt | gpt_os | parser
     
     result = chain_agent_verifier.invoke({
@@ -66,6 +65,25 @@ def agent_verify_if_is_a_query_Question(input: str) -> IsQueryQuestion:
     })
     return result
 
+def agent_rewrite_question(question: str, recent: list[dict], recalled: list[dict]) -> RewrittenQuestion:
+    parser = PydanticOutputParser(pydantic_object=RewrittenQuestion)
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         "Rewrite the current question as a complete, standalone question.\n"
+        "Use the history ONLY to resolve references like 'of these', 'and the second one?', "
+        "'in the last 3 years?'. If the question is already standalone, return it as is.\n"
+        "Do not answer the question and do not invent filters the user did not ask for.\n"
+        "Respond in Portuguese.\n\n"
+         "You MUST strictly follow this exact JSON format:\n{format_instructions}"),
+        ("human",
+         "Histórico recente:\n{recent}\n\nInterações antigas relacionadas:\n{recalled}\n\n"
+         "Pergunta atual: {question}"),
+    ])
+    fmt = lambda turns: "\n".join(f"- P: {t['question']} | R: {t['answer']}" for t in turns) or "(nenhum)"
+    return (prompt | gpt_os | parser).invoke({
+        "question": question, "recent": fmt(recent), "recalled": fmt(recalled),
+        "format_instructions": parser.get_format_instructions(),
+    })
 
 def agent_generator_sql(question: str, feedback: Optional[str] = None) -> SQLquery:
     parser = PydanticOutputParser(pydantic_object=SQLquery)
