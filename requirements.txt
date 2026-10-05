@@ -1,8 +1,25 @@
+# Interface e dados
+streamlit
+pandas
+
+# Orquestracao dos agentes e modelos de linguagem
 langchain
+langchain-core
 langgraph
+langchain-groq
+langchain-google-genai
 pydantic
 pydantic-settings
 python-dotenv
-pandas
-streamlit
+
+# Memoria semantica da conversa
+chromadb
+sentence-transformers
+torch
+torchvision
+
+# Validacao e execucao segura de SQL
+sqlglot
+
+# Testes
 pytest

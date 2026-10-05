@@ -36,12 +36,12 @@ gpt_os = ChatGroq(
     reasoning_effort = 'low'
 )
 
-# groq_comp = ChatGroq(
-#     model="groq/compound",
-#     api_key=(os.getenv("GROQ_API_KEY")),
-#     temperature= 0.0,
-#     max_tokens=4096
-# )
+gpt_os2= ChatGroq(
+    model="openai/gpt-oss-20b",
+    api_key=(os.getenv("GROQ_API_KEY")),
+    temperature= 0.0,
+    max_tokens=4096
+)
 
 
 def agent_verify_if_is_a_query_Question(input: str) -> IsQueryQuestion:
@@ -49,15 +49,24 @@ def agent_verify_if_is_a_query_Question(input: str) -> IsQueryQuestion:
     
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", 
-             "You are a query verifier. You must determine if the question is asking for a SQL query about the CineData database.\n"
-             "If it is, return True. If it is not, return False.\n"
-             "You must respond in Portuguese, including the reason field.\n\n"
-             "You MUST strictly follow this exact JSON format:\n{format_instructions}"),
+            ("system",
+            "You are a gatekeeper for a movie analytics assistant (CineData).\n"
+            "Decide if the question can be answered with data from the CineData database. "
+            "Users write in natural language and do NOT need to mention SQL.\n"
+            "The database covers: movies (title, release date, runtime, status), financials "
+            "(budget, revenue, profit), popularity and ratings (TMDB, IMDb, user ratings and reviews), "
+            "genres, production companies, and people (actors, directors, writers) linked to movies.\n"
+            "Return is_answer=true for any question about these topics, including rankings, averages, "
+            "counts and pairs (e.g. which actor-director pair worked together the most).\n"
+            "Return is_answer=false only for unrelated questions (weather, general knowledge, coding help) "
+            "or requests to modify data.\n"
+            "If in doubt and the question is about movies, return true.\n"
+            "You must respond in Portuguese, including the reason field.\n\n"
+            "You MUST strictly follow this exact JSON format:\n{format_instructions}"),
             ("human", "{question}"),
         ]
     )
-    chain_agent_verifier = prompt | gpt_os | parser
+    chain_agent_verifier = prompt | gpt_os2 | parser
     
     result = chain_agent_verifier.invoke({
         "question": input,
@@ -80,7 +89,7 @@ def agent_rewrite_question(question: str, recent: list[dict], recalled: list[dic
          "Pergunta atual: {question}"),
     ])
     fmt = lambda turns: "\n".join(f"- P: {t['question']} | R: {t['answer']}" for t in turns) or "(nenhum)"
-    return (prompt | gpt_os | parser).invoke({
+    return (prompt | gpt_os2 | parser).invoke({
         "question": question, "recent": fmt(recent), "recalled": fmt(recalled),
         "format_instructions": parser.get_format_instructions(),
     })
@@ -168,7 +177,7 @@ def agent_synthesizer_answer(sql_query: SQLquery, query_result: QueryExecutionRe
         ]
     )
     
-    chain_agent_synthesizer = prompt | gpt_os | parser
+    chain_agent_synthesizer = prompt | gpt_os2 | parser
     
     result = chain_agent_synthesizer.invoke({
         "objective": sql_query.objective,

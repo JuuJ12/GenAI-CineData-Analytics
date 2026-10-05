@@ -35,8 +35,8 @@ class AnswerSumary(BaseModel):
 
 class IsQueryQuestion(BaseModel):
     """Modelo de resposta do agente que valida se o usário esta pedindo uma consulta SQL sobre o CineData"""
-    is_answer: bool = Field(..., description="True se o usuário está pedindo uma consulta SQL sobre o CinetaData, False caso contrário")
-    reason: Optional[str] = Field(None, description="Motivo da reprovação")
+    is_answer: bool = Field(..., description="True se a pergunta pode ser respondida com os dados do CineData (filmes, finanças, avaliações, gêneros, produtoras, elenco e equipe), False se for sobre outro assunto")
+    reason: Optional[str] = Field(None, description="Motivo curto da decisão")
 
 class RewrittenQuestion(BaseModel):
     question: str = Field(description="Pergunta completa e independente, em português")

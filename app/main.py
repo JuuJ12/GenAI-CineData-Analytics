@@ -53,7 +53,11 @@ def _render_summary(state: PipelineState) -> None:
     with st.container(border=True):
         st.markdown("### 💬 Resposta")
         if answer:
-            (st.success if state.get("success") else st.warning)(answer.answer)
+            text = _safe_markdown(answer.answer)
+            if state.get("success"):
+                st.success(text)     
+            else:
+                st.warning(text)
         else:
             st.error(state.get("last_error") or "Não foi possível gerar uma resposta.")
 
@@ -93,7 +97,7 @@ def _render_data_tab(state: PipelineState) -> None:
     chart = frame.set_index(label)[[metric]] if label else frame[[metric]]
     (st.bar_chart if kind == "Barras" else st.line_chart)(chart.dropna())
 
-    st.title('📈 Estatísticas para Nerds')
+    st.title(' Por de Baixo dos Panos', icon='🔍')
     with st.expander("Respostas dos Agentes"):
         st.subheader("Agente Verificador")
         st.write(state.get("answer_agent_verifier", "—"))
@@ -164,15 +168,20 @@ def _render_result(state: PipelineState) -> None:
     with tab_agents:
         _render_agents_tab(state)
 
-
+def _safe_markdown(text: str) -> str:
+    """Escapa '$' pra o Streamlit não interpretar 'R$ ... R$' como fórmula LaTeX."""
+    return text.replace("$", r"\$")
 # ---------- app ----------
 
 def main() -> None:
     st.session_state.setdefault("session_id", uuid.uuid4().hex)
     st.session_state.setdefault("history", [])
     st.title("🎬 CineData Analytics")
-    st.caption("Pergunte em linguagem natural. As consultas rodam em modo somente leitura.")
-
+    st.caption("Pergunte em linguagem natural.")
+    with st.expander('Aviso', expanded=False):
+        st.info(
+            "Os modelos GRÁTIS do Groq permitem apenas 8000 tokens por minuto, então é recomendado que você dê um tempinho entre as perguntasd de no máximo 1 minuto. Para que os tokens resetem e não estoure erro de limite de requisições."
+        )
     with st.sidebar:
         st.header("💡 Exemplos")
         for example in EXAMPLES:

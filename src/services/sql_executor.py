@@ -111,25 +111,7 @@ def execute_read_only_query(sql: str, db_path: str, max_rows: int = DEAULT_ROW_L
     return QueryExecutionResult(columns=columns, rows=rows, row_count=len(rows))
 
 
-import sqlite3
-con = sqlite3.connect(r"data\cinerocket.db")
 
-base = """
-SELECT g.nome_genero, ROUND(AVG(f.lucro_usd * 1.0 / f.receita_usd), 3), COUNT(*)
-FROM fact_movies_performance f
-JOIN bridge_movie_genre bg ON bg.sk_movie_id = f.sk_movie_id
-JOIN dim_genres g ON g.sk_genre_id = bg.sk_genre_id
-WHERE {filtro}
-GROUP BY g.sk_genre_id, g.nome_genero
-ORDER BY 2 DESC LIMIT 3
-"""
-for nome, filtro in [
-    ("só receita > 0", "f.receita_usd > 0"),
-    ("receita e orçamento > 0", "f.receita_usd > 0 AND f.orcamento_usd > 0"),
-    ("receita >= 10000 e orçamento > 0", "f.receita_usd >= 10000 AND f.orcamento_usd > 0"),
-]:
-    print(nome, con.execute(base.format(filtro=filtro)).fetchall())
-con.close()
 
 
 
