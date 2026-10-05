@@ -153,6 +153,7 @@ Resultado estruturado (Pydantic) -> tabela, gráfico, CSV e auditoria
    linhas e quantidade de registros.
 6. **Sintetizador:** recebe a consulta e no máximo 20 linhas do resultado e
    produz uma resposta curta em português.
+    <img width="497" height="702" alt="cinedata_graph" src="https://github.com/user-attachments/assets/898928e5-c4e8-4421-8c4c-f77139316735" />
 
 O grafo permite até três tentativas por pergunta. Falhas de validação ou
 execução retornam ao gerador; ao atingir o limite, o fluxo termina com uma
