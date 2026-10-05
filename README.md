@@ -1,20 +1,20 @@
 # CineData Analytics
 
-Aplicacao de analise de filmes por linguagem natural. O usuario faz uma pergunta
-em portugues pela interface Streamlit e o sistema transforma a pergunta em uma
+Aplicacao de analise de filmes por linguagem natural. O usuário faz uma pergunta
+em português pela interface Streamlit e o sistema transforma a pergunta em uma
 consulta somente leitura no SQLite, executa a consulta e apresenta os dados, um
 grafico opcional, a SQL gerada e o caminho percorrido pelos agentes.
 
 ## O que a aplicacao faz
 
 - Responde perguntas sobre filmes, bilheteria, financas, popularidade,
-  avaliacoes, generos, produtoras, elenco e equipe.
-- Entende perguntas em linguagem natural em portugues.
-- Exibe a resposta resumida, as linhas retornadas e um grafico quando existe
+  avaliações, gêneros, produtoras, elenco e equipe.
+- Entende perguntas em linguagem natural em português.
+- Exibe a resposta resumida, as linhas retornadas e um gráfico quando existe
   uma coluna numerica.
 - Permite baixar o resultado em CSV.
-- Mantem memoria semantica das interacoes da sessao com Chroma.
-- Mostra a SQL e as decisoes dos agentes para facilitar a auditoria.
+- Mantém memória semantica das interacoes da sessao com Chroma.
+- Mostra a SQL e as decisões dos agentes para facilitar a auditória.
 - Recusa perguntas fora do escopo do banco CineData.
 
 Exemplos:
@@ -28,16 +28,15 @@ Quantos filmes foram lancados por ano?
 ## Requisitos
 
 - Python 3.11 ou superior.
-- Uma chave da API do Groq para os agentes de verificacao, geracao e validacao
-  de SQL.
-- Uma chave da API do Google Gemini para o agente de reescrita e sintese.
-- O arquivo SQLite `data/cinerocket.db`.
+- Uma chave da API do Groq. link: [https://groq.com/]
+- (Opcional)Uma chave da API do Google Gemini para o agente de reescrita e sintese.
+- O arquivo SQLite `cinerocket.db`. Coloque na pasta "data" do diretório.
 
 As chamadas aos modelos sao externas e podem consumir cota ou estar sujeitas
 ao limite de requisicoes do provedor. Nunca coloque chaves no codigo ou no
 controle de versao.
 
-## Instalacao no Windows
+## Instalação no Windows
 
 Abra o PowerShell na raiz do projeto e crie o ambiente virtual:
 
@@ -48,7 +47,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Se o PowerShell bloquear a ativacao, a politica pode ser liberada somente para
+Se o PowerShell bloquear a ativação, a politica pode ser liberada somente para
 o terminal atual:
 
 ```powershell
@@ -70,7 +69,7 @@ GEMINI_API_KEY=sua-chave-do-google
 # DB_PATH=C:\caminho\para\cinerocket.db
 ```
 
-O codigo carrega as variaveis com `python-dotenv`. A variavel `DB_PATH` e
+O código carrega as variaveis com `python-dotenv`. A variável `DB_PATH` e
 opcional; se nao for definida, o pipeline usa `data/cinerocket.db`.
 
 ## Como executar
@@ -83,7 +82,7 @@ streamlit run app/main.py
 
 O Streamlit abrira uma URL local, normalmente
 `http://localhost:8501`. Digite uma pergunta, clique em **Analisar** e
-aguarde o pipeline. A aba **Dados e grafico** mostra o resultado, a aba
+aguarde o pipeline. A aba **Dados e gráfico** mostra o resultado, a aba
 **SQL** mostra a consulta e a aba **Agentes** mostra as etapas e tentativas.
 
 Para encerrar, pressione `Ctrl+C` no terminal.
@@ -148,14 +147,14 @@ Resultado estruturado (Pydantic) -> tabela, grafico, CSV e auditoria
    Perguntas fora do escopo sao rejeitadas sem consultar o banco.
 3. **Gerador SQL:** recebe a pergunta independente e o contexto do schema e
    produz `objective`, `sql`, `category` e `explanation`.
-4. **Validador SQL:** verifica coerencia com o schema e seguranca. Em caso de
+4. **Validador SQL:** verifica coerencia com o schema e segurança. Em caso de
    reprova, o grafo devolve o feedback ao gerador.
 5. **Executor:** executa a consulta validada no SQLite e retorna colunas,
    linhas e quantidade de registros.
 6. **Sintetizador:** recebe a consulta e no maximo 20 linhas do resultado e
-   produz uma resposta curta em portugues.
+   produz uma resposta curta em português.
 
-O grafo permite ate tres tentativas por pergunta. Falhas de validacao ou
+O grafo permite ate três tentativas por pergunta. Falhas de validação ou
 execucao retornam ao gerador; ao atingir o limite, o fluxo termina com uma
 mensagem de falha. Uma execucao bem-sucedida e gravada na memoria da sessao.
 
