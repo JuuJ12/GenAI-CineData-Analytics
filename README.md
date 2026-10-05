@@ -1,6 +1,6 @@
 # CineData Analytics
 
-Aplicacao de analise de filmes por linguagem natural. O usuário faz uma pergunta
+Aplicação de analise de filmes por linguagem natural. O usuário faz uma pergunta
 em português pela interface Streamlit e o sistema transforma a pergunta em uma
 consulta somente leitura no SQLite, executa a consulta e apresenta os dados, um
 grafico opcional, a SQL gerada e o caminho percorrido pelos agentes.
