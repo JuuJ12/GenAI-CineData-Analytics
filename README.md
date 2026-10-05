@@ -29,7 +29,7 @@ Quantos filmes foram lançados por ano?
 
 - Python 3.11 ou superior.
 - Uma chave da API do Groq. link: [https://groq.com/]
-- (Opcional) Uma chave da API do Google Gemini para o agente de reescrita e síntese.
+- (Opcional) Uma chave da API do Google Gemini.
 - O arquivo SQLite `cinerocket.db`. Coloque na pasta "data" do diretório.
 
 As chamadas aos modelos são externas e podem consumir cota ou estar sujeitas
